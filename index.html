@@ -1,0 +1,2254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manchester Sitara Apt Portal</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --header-bg: #4f46e5;
+            --accent-gold: #b45309;
+            --card-blue: #bfdbfe;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body { background-color: var(--bg-color); color: var(--text-dark); display: flex; justify-content: center; min-height: 100vh; }
+        
+        .app-container { width: 100%; max-width: 480px; background: var(--card-bg); min-height: 100vh; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.1); position: relative; overflow: hidden; }
+        
+        /* --- DYNAMIC HEADER --- */
+        header { background: var(--header-bg); color: white; transition: all 0.3s ease; }
+        
+        .login-header { padding: 30px 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 10; }
+        .login-header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: 0.5px; }
+        
+        .app-header { display: none; justify-content: space-between; align-items: center; padding: 15px 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .header-logo { background: var(--accent-gold); padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 0.85rem; text-align: center; line-height: 1.1;}
+        .header-title { font-size: 1.1rem; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
+        .header-user { background: var(--accent-gold); padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; display: flex; flex-direction: column; align-items: flex-end; }
+        .header-user span { font-weight: bold; }
+        .header-user button { background: none; border: none; color: #fde68a; font-size: 0.75rem; cursor: pointer; padding: 0; margin-top: 4px; text-decoration: underline; box-shadow: none; width: auto; font-weight: normal;}
+        
+        /* --- NEW NAVIGATION BAR --- */
+        .top-nav { display: none; background: #374151; color: white; }
+        .nav-item { flex: 1; text-align: center; padding: 12px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: background 0.2s; border-bottom: 3px solid transparent;}
+        .nav-item:hover { background: #4b5563; }
+        .nav-item.active { background: #1f2937; border-bottom: 3px solid #60a5fa; color: #60a5fa;}
+
+        /* --- SMOOTH VIEW TRANSITIONS --- */
+        .view { display: none; padding: 20px; flex: 1; overflow-y: auto; opacity: 0; transform: translateY(15px); transition: opacity 0.3s ease, transform 0.3s ease; }
+        .view.active { display: block; opacity: 1; transform: translateY(0); }
+        
+        /* --- INPUTS & BUTTONS --- */
+        .login-box { margin-top: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.85rem; margin-bottom: 6px; color: var(--text-dark); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;}
+        input, select, textarea { width: 100%; padding: 12px; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 1rem; transition: border-color 0.2s, box-shadow 0.2s; background: #f9fafb; color: var(--text-dark);}
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15); background: #ffffff;}
+        
+        button { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 600; margin-top: 10px; transition: background 0.2s, transform 0.1s; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2); }
+        button:hover { background: var(--primary-hover); box-shadow: 0 6px 12px rgba(37, 99, 235, 0.3); }
+        button:active { transform: scale(0.97); } 
+
+        /* --- CSS GRID DASHBOARD --- */
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .grid-card { background: var(--card-blue); border: 1px solid #93c5fd; border-radius: 16px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; transition: transform 0.2s; }
+        .grid-card:hover { transform: translateY(-2px); }
+        
+        .card-tall { min-height: 220px; }
+        .card-short { min-height: 140px; }
+        .grid-card h3 { color: #1e3a8a; font-size: 1.05rem; margin-bottom: 12px; border-bottom: 2px dashed #93c5fd; padding-bottom: 8px; text-align: center; }
+
+        .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 18px; margin-bottom: 20px; background: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .card-title { font-size: 1.1rem; margin-bottom: 12px; color: var(--primary); border-bottom: 2px solid #f3f4f6; padding-bottom: 8px; font-weight: 700;}
+
+        /* --- CUSTOM TOAST NOTIFICATIONS --- */
+        .toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 3000; display: flex; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; pointer-events: none; }
+        .toast { background: #1f2937; color: white; padding: 14px 20px; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); font-size: 0.95rem; font-weight: 500; opacity: 0; transform: translateY(20px); transition: opacity 0.3s ease, transform 0.3s ease; text-align: center; }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.error { background: var(--danger); border-left: 4px solid #b91c1c; }
+        .toast.success { background: var(--success); border-left: 4px solid #047857; }
+        .toast.info { background: var(--primary); border-left: 4px solid #1e3a8a; }
+
+        /* --- TIMELINE BANNERS (Admin & Payment) --- */
+        .timeline-container { display: flex; flex-direction: column; gap: 10px; padding-top: 5px; flex: 1; overflow-y: auto; max-height: 300px; }
+        
+        .admin-banner { 
+            background: linear-gradient(135deg, #4f46e5, #3730a3); color: white; padding: 12px; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: relative; border-left: 5px solid var(--accent-gold); animation: slideIn 0.3s ease-out; transition: transform 0.2s;
+        }
+        
+        .payment-banner {
+            background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 12px; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: relative; border-left: 5px solid #78350f; animation: slideIn 0.3s ease-out; transition: transform 0.2s; display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .admin-banner:hover, .payment-banner:hover { transform: translateY(-2px); }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* --- POPUP MODALS --- */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: white; width: 90%; max-width: 400px; border-radius: 15px; overflow: hidden; position: relative; }
+        .modal-header { padding: 15px; background: var(--header-bg); color: white; font-weight: bold; }
+        .modal-body { padding: 20px; color: var(--text-dark); }
+        .modal-img { width: 100%; height: 180px; object-fit: cover; background: #eee; margin-bottom: 15px; border-radius: 8px; display: none; }
+        .close-modal { position: absolute; top: 10px; right: 15px; color: white; font-size: 1.5rem; cursor: pointer; }
+
+        @media (max-width: 380px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .header-title { font-size: 0.9rem; }
+        }
+/* --- PARKING MODULE CSS --- */
+        .parking-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-top: 15px; }
+        .parking-slot { border-radius: 10px; padding: 12px; text-align: center; border: 2px solid transparent; transition: 0.2s; position: relative;}
+        
+        .slot-available { background: #d1fae5; border-color: #34d399; color: #065f46; cursor: pointer; }
+        .slot-available:hover { transform: scale(1.03); box-shadow: 0 4px 10px rgba(52, 211, 153, 0.3); }
+        
+        .slot-occupied { background: #fee2e2; border-color: #f87171; color: #991b1b; }
+        .slot-timer { font-family: monospace; font-size: 1.1rem; font-weight: bold; margin: 8px 0; background: rgba(255,255,255,0.6); border-radius: 4px; padding: 2px;}
+        .vacate-btn { background: #ef4444; padding: 6px; font-size: 0.75rem; border-radius: 6px; margin-top: 5px; box-shadow: none;}
+        .vacate-btn:hover { background: #b91c1c; }
+#delete-payment-btn {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    height: auto !important;
+    width: 100% !important;
+    background-color: #dc3545 !important; /* Force Red */
+    border: 2px solid white !important;
+    color: white !important;
+    pointer-events: auto !important;
+}
+#paymentModal #delete-payment-btn {
+    display: block !important;
+}
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <header id="login-header" class="login-header">
+        <h1>Welcome to Sitara Apt</h1>
+    </header>
+
+    <header id="app-header" class="app-header" style="justify-content: space-between;">
+        <!-- 1. Left invisible spacer to keep the logo perfectly centered -->
+        <div style="flex: 1;"></div>
+        
+        <!-- 2. Center Stage Logo (Made much larger) -->
+        <div style="flex: 2; display: flex; justify-content: center; align-items: center;">
+            <img src="Sitara1.png" alt="Sitara Logo" style="max-height: 75px; width: 100%; max-width: 280px; object-fit: contain;">
+        </div>
+        
+        <!-- 3. User Box kept neatly on the right -->
+        <div style="flex: 1; display: flex; justify-content: flex-end;">
+            <div class="header-user">
+                <span id="display-user-name">Welcome</span>
+                <button onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </header>
+    
+    <nav id="top-nav" class="top-nav">
+        <div class="nav-item active" onclick="switchNav('resident-dashboard-view')">My Space</div>
+        <div class="nav-item" onclick="switchNav('resident-requests-view')">Requests</div>
+        <div class="nav-item" onclick="switchNav('resident-payments-view')">Payments</div>
+        <div id="admin-nav" class="nav-item" style="display:none;" onclick="switchNav('admin-hub-view')">Admin Hub</div>
+    </nav>
+<div id="parking-view" class="view">
+        <button style="background: #475569; color: white; margin-bottom: 15px; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;" onclick="switchNav('resident-dashboard-view')">⬅ Back to Dashboard</button>
+        <div class="card">
+            <div class="card-title">Visitor Parking Status</div>
+            <p style="font-size: 0.85rem; color: var(--text-light);">Tap an available green slot to reserve it. You can see who is currently occupying other slots.</p>
+            
+            <div id="live-parking-grid" class="parking-grid">
+                </div>
+        </div>
+    </div>
+
+    <!-- LOGIN VIEW -->
+    <div id="login-view" class="view active">
+        <div class="login-box">
+            <h2 style="margin-bottom: 20px; color: var(--primary); text-align: center;">Sign In</h2>
+            <div class="form-group">
+                <label>Select Role</label>
+                <select id="user-role">
+                    <option value="resident">Resident</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <!-- Updated Label to match Supabase Auth requirements -->
+                <label>User Name</label> 
+                <input type="text" id="user-id" placeholder="Enter your Registered Name">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="*****">
+            </div>
+            <!-- Updated button onclick -->
+            <button id="login-btn" onclick="handleLogin(document.getElementById('user-id').value, document.getElementById('password').value)">Secure Login</button>
+            
+            <p style="text-align: center; margin-top: 15px; font-size: 0.85rem; color: var(--text-light);">
+                First time here? <a href="#" onclick="openSignupView()" style="color: var(--primary); font-weight: bold; text-decoration: none;">Activate Account</a>
+            </p>
+        </div>
+<button type="button" onclick="switchNav('security-login-view')" style="width: 100%; background: transparent; color: #64748b; padding: 12px; font-size: 1rem; font-weight: bold; border: 2px dashed #cbd5e1; border-radius: 8px; cursor: pointer; transition: 0.2s;">
+    🛡️ Security Guard Login
+</button>    </div>
+    
+<!-- SIGNUP VIEW -->
+    <div id="signup-view" class="view">
+        <div class="login-box">
+            <h2 style="margin-bottom: 10px; color: var(--primary); text-align: center;">Activate Account</h2>
+            <p style="font-size: 0.85rem; margin-bottom: 20px; color: var(--text-light); text-align: center;">Enter your Flat Number and Name exactly as registered with the Management.</p>
+
+            <div class="form-group">
+                <label>Flat Number</label>
+                <input type="text" id="reg-flat" placeholder="e.g., A005">
+            </div>
+            <div class="form-group">
+                <label>Registered Name</label>
+                <input type="text" id="reg-name" placeholder="e.g., RamXXXX(O)">
+            </div>
+            <div class="form-group">
+                <label>Create Password</label>
+                <input type="password" id="reg-pwd" placeholder="Create a secure password">
+            </div>
+            <div class="form-group">
+                <label>Mobile Number</label>
+                <input type="tel" id="reg-mobile" placeholder="Mobile Number">
+            </div>
+            <div class="form-group">
+                <label>Email ID</label>
+                <input type="email" id="reg-email" placeholder="Email Address">
+            </div>
+
+            <!-- Updated button onclick -->
+            <button id="signup-btn" onclick="handleSignup(
+    document.getElementById('reg-name').value, 
+    document.getElementById('reg-pwd').value, 
+    document.getElementById('reg-name').value, 
+    document.getElementById('reg-flat').value,
+    document.getElementById('reg-mobile').value,
+    document.getElementById('reg-email').value
+)">Verify & Create Account</button>
+            
+            <p style="text-align: center; margin-top: 15px; font-size: 0.85rem;">
+                <a href="#" onclick="backToLogin()" style="color: var(--text-light); text-decoration: underline;">Back to Login</a>
+            </p>
+        </div>
+    </div>
+    <!-- FORCE PASSWORD VIEW -->
+    <div id="force-password-view" class="view">
+        <div class="login-box">
+            <h2 style="margin-bottom: 10px; color: var(--danger); text-align: center;">Complete Registration</h2>
+            <p style="font-size: 0.9rem; margin-bottom: 20px; color: var(--text-light); text-align: center;">Please secure your account with a new password and update your contact details.</p>
+            
+            <div class="form-group">
+                <label>New Password</label>
+                <input type="password" id="new-pwd" placeholder="Enter new password">
+            </div>
+            <div class="form-group">
+                <label>Confirm New Password</label>
+                <input type="password" id="confirm-pwd" placeholder="Type it again">
+            </div>
+            
+            <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+            
+            <div class="form-group">
+                <label>Mobile Number</label>
+                <input type="tel" id="user-mobile" placeholder="e.g., 9876543210">
+            </div>
+            <div class="form-group">
+                <label>Mail ID</label>
+                <input type="email" id="user-email" placeholder="example@mail.com">
+            </div>
+
+            <button id="update-pwd-btn" onclick="saveNewPassword()">Update Profile & Enter Dashboard</button>
+        </div>
+    </div>
+
+    <!-- DASHBOARD VIEW -->
+    <div id="resident-dashboard-view" class="view">
+        <div class="dashboard-grid">
+            
+            <div class="grid-card card-tall" style="grid-column: span 2; min-height: 250px;">
+                <h3>📢 Management Announcements</h3>
+                <div id="admin-timeline" class="timeline-container">
+                    <div style="flex: 1; display: flex; align-items: center; justify-content: center; color: #475569; font-size: 0.9rem; text-align: center;">
+                        No new announcements from management today.
+                    </div>
+                </div>
+            </div> <div class="grid-card card-short">
+                <h3>Parking</h3>
+                <div style="text-align: center; margin-top: auto; margin-bottom: auto;">
+                    <span id="dashboard-open-slots" style="font-size: 2.2rem; font-weight: bold; color: #047857;">--</span>
+                    <p style="font-size: 0.8rem; color: #475569; margin-bottom: 8px;">Visitor Slots Open</p>
+                    <button style="padding: 6px; font-size: 0.8rem;" onclick="openParkingModule()">Manage Slots</button>
+                </div>
+            </div>
+
+            <div class="grid-card card-tall" style="grid-column: span 2; min-height: 400px; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed #93c5fd; padding-bottom: 8px; margin-bottom: 10px;">
+                    <h3 style="border: none; margin: 0; padding: 0;">Sitarian Connect</h3>
+                    <button onclick="document.getElementById('socialModal').style.display='flex'" style="width: auto; padding: 6px 12px; margin: 0; background: var(--primary); font-size: 0.8rem;">+ Post</button>
+                </div>
+                
+                <div id="social-timeline" style="flex: 1; overflow-y: auto; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; max-height: 350px;">
+                    <div id="social-loading-status" style="display: flex; align-items: center; justify-content: center; height: 100%; color: #475569; font-size: 0.9rem;">
+                        Loading community posts...
+                    </div>
+                </div>
+            </div>
+            
+        </div> 
+        </div>            
+
+    <!-- REQUESTS VIEW -->
+    <div id="resident-requests-view" class="view">
+        <div class="card">
+            <div class="card-title">Raise a Concern</div>
+            <div class="form-group">
+                <select>
+                    <option>Plumbing Issue</option>
+                    <option>Electrical / Wiring</option>
+                    <option>Common Area Cleaning</option>
+                    <option>Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <textarea rows="3" placeholder="Describe the issue..."></textarea>
+            </div>
+            <button onclick="showToast('Ticket submitted to management.', 'success')">Submit Ticket</button>
+        </div>
+    </div>    
+</div>
+    <!-- PAYMENTS VIEW (UPDATED) -->
+    <div id="resident-payments-view" class="view">
+        
+        <div class="card" style="border-top: 4px solid var(--warning);">
+            <div class="card-title">Payment Action Required</div>
+            
+            <div id="payment-timeline" class="timeline-container"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Payment History</div>
+            
+            <div id="payment-history-timeline" style="padding: 10px; text-align: center; color: #64748b; font-size: 0.85rem;">
+                No recent payment history.
+            </div>
+        </div>
+        </div>
+    <!-- ADMIN HUB VIEW (CLEANED UP & CONSOLIDATED) -->
+    <div id="admin-hub-view" class="view">
+        <div class="card">
+            <div class="card-title">Post New Announcement</div>
+            
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="notice-title" placeholder="e.g., Water Supply Interruption">
+            </div>
+            
+            <div class="form-group">
+                <label>Description</label>
+                <textarea id="notice-desc" rows="3" placeholder="Enter full details here..."></textarea>
+            </div>
+            
+            <!-- DUAL BUTTON UPLOAD SECTION -->
+            <div class="form-group">
+                <label>Upload Image</label>
+                <div style="display: flex; gap: 10px;">
+                    <!-- HIDDEN actual inputs -->
+                    <input type="file" id="camera-input" accept="image/*" capture="environment" style="display: none;" onchange="handleImageSelection(this, 'file-feedback', 'gallery-input')">
+                    <input type="file" id="gallery-input" accept="image/*" style="display: none;" onchange="handleImageSelection(this, 'file-feedback', 'camera-input')">
+
+                    <!-- VISIBLE custom buttons (connected to the hidden inputs via "for" attribute) -->
+                    <label for="camera-input" style="flex: 1; text-align: center; background: #e5e7eb; padding: 12px; border-radius: 8px; cursor: pointer; color: var(--text-dark); font-weight: 600; border: 1px solid #d1d5db;">
+                        📷 Camera
+                    </label>
+                    <label for="gallery-input" style="flex: 1; text-align: center; background: #e5e7eb; padding: 12px; border-radius: 8px; cursor: pointer; color: var(--text-dark); font-weight: 600; border: 1px solid #d1d5db;">
+                        🖼️ Gallery
+                    </label>
+                </div>
+                <!-- This text tells the user an image was successfully attached -->
+                <small id="file-feedback" style="color: var(--primary); display: block; margin-top: 8px; font-weight: bold;"></small>
+                <small style="color: var(--text-light); display: block; margin-top: 4px;">Max size: 5MB (Will be auto-compressed).</small>
+            </div>
+            
+            <button id="post-notice-btn" onclick="postNotice()" style="background: var(--success);">Publish Notice</button>
+            
+            <hr style="margin: 25px 0; border: 0; border-top: 2px dashed #e5e7eb;">
+            
+            <div class="card-title" style="color: var(--warning);">Issue Payment Intimation</div>
+            
+            <div class="form-group"><label>Fee Title</label><input type="text" id="pay-title" placeholder="e.g., Annual Maintenance"></div>
+            <div class="form-group"><label>Description / Details</label><textarea id="pay-desc" rows="2" placeholder="e.g., Total ₹5,000 due by end of month."></textarea></div>
+            <div class="form-group"><label>Amount (₹)</label><input type="number" id="pay-amt" placeholder="5000"></div>
+            <div class="form-group"><label>QR Code URL</label><input type="text" id="pay-qr" placeholder="Link to UPI QR Code Image"></div>
+            <div class="form-group"><label>Bank Payment Link</label><input type="text" id="pay-link" placeholder="https://your-bank-portal.com"></div>
+            
+            <button type="button" onclick="postPayment()" style="background: var(--warning);">Issue Payment Notice</button>
+        </div>
+     <!-- CSV UPLOAD SECTION -->
+        <div style="margin-top: 30px; padding: 20px; border: 2px dashed #cbd5e1; border-radius: 8px; background-color: #f8fafc;">
+            <h3 style="margin-top: 0; color: #1e293b;">Distribute Monthly Bills (CSV)</h3>
+            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 15px;">
+                Expected column order: <strong>FlatNo, Maintenance, Water, Genset, Total</strong>
+            </p>
+            <input type="file" id="csv-upload" accept=".csv" style="margin-bottom: 15px; display: block;">
+            <button onclick="processMonthlyCSV()" style="padding: 10px 20px; background-color: #f59e0b; color: white; font-weight: bold; border: none; border-radius: 6px; cursor: pointer;">
+                Upload & Distribute Bills
+            </button>
+        </div>
+        
+        <!-- ADMIN VERIFICATION DASHBOARD (Now safely inside the hub!) -->
+        <div id="admin-verification-section" style="display: none; padding: 20px; background: #fff; border-radius: 10px; margin-top: 20px; border: 1px solid #e5e7eb;">
+            <h3 style="margin-bottom: 15px; color: var(--primary); border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">
+                Treasurer Verification
+            </h3>
+            
+            <div id="pending-payments-list">
+                <p style="color: #64748b; font-size: 0.9rem;">Loading pending verifications...</p>
+            </div>
+        </div>
+
+    </div>
+<!-- ======================================================= -->
+<!-- 🛡️ SECURITY LOGIN VIEW -->
+<!-- ======================================================= -->
+<div id="security-login-view" class="view">
+    <!-- 🟢 INNER WRAPPER: Handles the styling without fighting the navigation -->
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background-color: #1e293b;">
+        
+        <div class="card" style="width: 90%; max-width: 400px; text-align: center; padding: 30px; border-top: 6px solid #f59e0b; border-radius: 12px; background: white;">
+            <h2 style="color: #1e293b; margin-top: 0; margin-bottom: 5px;">🛡️ Gate Security</h2>
+            <p style="color: #64748b; margin-bottom: 25px; font-size: 0.95rem;">Select your post to configure the tablet.</p>
+
+            <div class="form-group" style="text-align: left;">
+                <label style="font-weight: bold; color: #475569;">Select Post</label>
+                <select id="security-gate-select" style="width: 100%; padding: 15px; font-size: 1.1rem; border-radius: 8px; border: 2px solid #e2e8f0; background: #f8fafc; font-weight: bold;">
+                    <option value="In-Gate">In-Gate (Arrivals & Entry)</option>
+                    <option value="Out-Gate">Out-Gate (Departures & Gatepasses)</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="text-align: left; margin-top: 20px;">
+                <label style="font-weight: bold; color: #475569;">Security Passcode</label>
+                <input type="password" id="security-passcode" placeholder="Enter PIN" style="width: 100%; padding: 15px; font-size: 1.2rem; border-radius: 8px; border: 2px solid #e2e8f0; text-align: center; letter-spacing: 8px; font-weight: bold;">
+            </div>
+
+            <button type="button" onclick="window.processSecurityLogin()" style="width: 100%; background: #f59e0b; color: white; padding: 15px; font-size: 1.2rem; font-weight: bold; border: none; border-radius: 8px; margin-top: 25px; cursor: pointer; transition: 0.2s;">
+                Authenticate Tablet
+            </button>
+            
+            <button type="button" onclick="switchNav('login-view')" style="background: transparent; color: #94a3b8; border: none; margin-top: 20px; font-size: 0.9rem; text-decoration: underline; cursor: pointer;">
+                Return to Resident Login
+            </button>
+        </div>
+
+    </div>
+</div>
+<!-- NOTICE POPUP MODAL -->
+<div id="noticeModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="closeNoticeModal()">&times;</span>
+        <div class="modal-header" id="modalTitle">Notice</div>
+        <div class="modal-body">
+            <img id="modalImg" class="modal-img" src="" alt="Notice Image">
+            <p id="modalDesc" style="line-height: 1.5; font-size: 0.95rem;"></p>
+        </div>
+    </div>
+</div>
+<div id="paymentModal" class="modal">
+    <div class="modal-content">
+        <span onclick="closePaymentModal()" style="position: absolute; top: 15px; right: 20px; font-size: 1.5rem; font-weight: bold; cursor: pointer; color: #64748b;">&times;</span>
+        <div class="modal-header" id="payModalTitle" style="background: var(--warning);">Payment Intimation</div>
+        
+        <div class="modal-body" style="text-align: center;">
+            <p id="payModalDesc" style="margin-bottom: 15px; font-weight: bold;"></p>
+            
+            <!-- 🟢 UPDATED: QR Code Image Container -->
+            <div id="qr-container" style="display: none; background: #f9fafb; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #e5e7eb;">
+                <p style="font-size: 0.8rem; text-transform: uppercase; margin-bottom: 10px; color: var(--text-light);">Scan to Pay</p>
+                <img id="payModalImg" src="" alt="QR Code" style="width: 100%; max-width: 200px; margin: 0 auto;">
+            </div>
+
+            <!-- Mobile UPI App Link Button -->
+            <a id="payModalUpiLink" href="#" style="display: none; background: #10b981; color: white; padding: 14px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-bottom: 10px;">
+                Pay via GPay / UPI App
+            </a>
+
+            <!-- Existing Bank Portal Link -->
+            <a id="payModalLink" href="#" target="_blank" style="display: none; background: var(--primary); color: white; padding: 14px; text-decoration: none; border-radius: 8px; font-weight: bold; margin-bottom: 10px;">
+                Proceed to Bank Portal
+            </a>
+            
+            <button style="background: var(--success); margin-top: 5px;" onclick="confirmPaymentAction()">I Have Paid This</button>
+        </div>
+
+        <button id="delete-payment-btn" onclick="deletePaymentRequest(this)" style="display: none; background: var(--danger);">Delete Payment Request</button>
+    </div>
+</div>
+
+<!-- ======================================================= -->
+<!-- 🛡️ SECURITY GATE VIEW (Dynamic for In/Out Gates) -->
+<!-- ======================================================= -->
+<div id="security-gate-view" class="view">
+    
+    <!-- 🟢 IN-GATE ONLY: New Entry Controls -->
+    <div id="new-entry-controls" class="card" style="border-top: 4px solid #3b82f6;">
+        <div class="card-title">New Arrival Registration</div>
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <button onclick="window.openGateForm('Guest')" style="flex: 1; background: #3b82f6; padding: 15px; border-radius: 8px; color: white; font-weight: bold; border: none; cursor: pointer;">👤 Guest</button>
+            <button onclick="window.openGateForm('Vendor')" style="flex: 1; background: #f59e0b; padding: 15px; border-radius: 8px; color: white; font-weight: bold; border: none; cursor: pointer;">🛠️ Service/Vendor</button>
+        </div>
+    </div>
+
+    <!-- 🟢 OUT-GATE ONLY: Vehicle Exit Controls -->
+    <div id="out-gate-vehicle-controls" class="card" style="display: none; border-top: 4px solid #ef4444;">
+        <div class="card-title">Vehicle Exit Log</div>
+        <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 15px;">Record departing vehicles and material transport.</p>
+        <div class="form-group">
+            <input type="text" id="exit-vehicle-number" placeholder="Vehicle No. (e.g., TN 38 AA 1234)" style="font-size: 1.1rem; padding: 12px; font-weight: bold; text-transform: uppercase;">
+        </div>
+        <button onclick="alert('Vehicle Logged!')" style="width: 100%; background: #ef4444; padding: 15px; color: white; font-weight: bold; border-radius: 6px; border: none; font-size: 1.1rem; cursor: pointer;">
+            Log Vehicle Departure
+        </button>
+    </div>
+
+    <!-- (Keep your existing gate-entry-form-card code right here) -->
+    
+    <!-- 🟢 BOTH GATES: Active Premises Log (Now with Check-Out Buttons!) -->
+    <div class="card" style="margin-top: 20px;">
+        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">
+            <span>Active Premises Log</span>
+            <button onclick="window.loadActiveGateLogs()" style="background: transparent; border: 1px solid #cbd5e1; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; cursor: pointer;">🔄 Refresh</button>
+        </div>
+        <div id="active-gate-log-list" style="margin-top: 15px;">
+            <p style="text-align: center; color: #64748b; padding: 20px;">Loading...</p>
+        </div>
+    </div>
+</div>
+
+
+<!-- NEW: SITARIAN SOCIAL MODAL -->
+<div id="socialModal" class="modal">
+    <div class="modal-content">
+        <span class="close-modal" onclick="document.getElementById('socialModal').style.display='none'">&times;</span>
+        <div class="modal-header" style="background: var(--accent-gold);">Create Community Post</div>
+        <div class="modal-body">
+            <!-- NEW TITLE INPUT -->
+            <div class="form-group">
+                <input type="text" id="social-title" placeholder="Post Title / Subject" style="font-weight: bold;">
+            </div>
+            
+            <div class="form-group">
+                <textarea id="social-msg" rows="3" placeholder="What's happening in Sitara?"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <div class="form-group">
+                <label>Attach Image (Optional)</label>
+                <div style="display: flex; gap: 10px;">
+                    <!-- CRITICAL FIX: Removed display: none; Used 1px transparent trick so Android doesn't delete the photo -->
+                    <input type="file" id="social-camera" accept="image/*" capture="environment" style="position: absolute; opacity: 0; width: 1px; height: 1px; z-index: -1;" onchange="handleSocialImage(this)">
+                    <input type="file" id="social-gallery" accept="image/*" style="position: absolute; opacity: 0; width: 1px; height: 1px; z-index: -1;" onchange="handleSocialImage(this)">
+                    
+                    <!-- Visible Buttons -->
+                    <label for="social-camera" style="flex: 1; text-align: center; background: #e5e7eb; padding: 12px; border-radius: 8px; cursor: pointer; color: var(--text-dark); font-weight: 600; border: 1px solid #d1d5db;">📷 Camera</label>
+                    <label for="social-gallery" style="flex: 1; text-align: center; background: #e5e7eb; padding: 12px; border-radius: 8px; cursor: pointer; color: var(--text-dark); font-weight: 600; border: 1px solid #d1d5db;">🖼️ Gallery</label>
+                </div>
+                <small id="social-feedback" style="color: var(--primary); display: block; margin-top: 8px; font-weight: bold;"></small>
+            </div>
+            
+            <button id="post-social-btn" onclick="postSocial()" style="background: var(--primary);">Share with Residents</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+window.switchNav = function(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
+};
+    // 1. Initialize Supabase Connection (Renamed to 'db' to prevent name collision)
+    // 1. Initialize Supabase Connection
+const SUPABASE_URL = 'https://tqaqfgxasvmbustcrkkm.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxYXFmZ3hhc3ZtYnVzdGNya2ttIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcxNTM2NzYsImV4cCI6MjEwMjcyOTY3Nn0.BrmnRSNaTaw9HTzHSmAN-Sna5_EdViXN6gP9hp_N8Uc';
+
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let tempUserData = {};
+
+    // =========================================================================
+    // 1. HELPERS: IMAGE SELECTION & COMPRESSION
+    // =========================================================================
+    function handleImageSelection(inputElement, feedbackId, parallelInputId) {
+        const feedback = document.getElementById(feedbackId);
+        if (inputElement.files.length > 0) {
+            feedback.innerText = "✅ Image attached!";
+            const parallelInput = document.getElementById(parallelInputId);
+            if (parallelInput) parallelInput.value = '';
+        } else {
+            feedback.innerText = '';
+        }
+    }
+
+    function compressImage(file, successCallback, errorCallback) {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function(event) {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = function() {
+                const MAX_WIDTH = 800; const MAX_HEIGHT = 800;
+                let width = img.width; let height = img.height;
+                if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+                else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width; canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                successCallback(canvas.toDataURL('image/jpeg', 0.7));
+            };
+            img.onerror = function() { if (errorCallback) errorCallback(new Error("Image error")); };
+        };
+        reader.onerror = function() { if (errorCallback) errorCallback(new Error("File error")); };
+    }
+
+ // =========================================================================
+    // 2. AUTHENTICATION UI NAVIGATION
+    // =========================================================================
+    window.openSignupView = function() {
+        // Hides all views
+        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+        // Shows the signup view
+        document.getElementById('signup-view').classList.add('active');
+        
+        const loginHeader = document.getElementById('login-header');
+        if (loginHeader) loginHeader.style.display = 'block';
+    };
+
+    window.backToLogin = function() {
+        // Hides all views
+        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+        // Shows the login view
+        document.getElementById('login-view').classList.add('active');
+    };   
+
+window.handleSignup = async function(email, password, residentName, flatNumber) {
+    showToast("Creating account...", "info");
+
+    try {
+        // 1. Create the secure login credentials in Supabase Auth
+        const { data: authData, error: authError } = await db.auth.signUp({
+            email: email,
+            password: password
+        });
+
+        if (authError) throw authError;
+
+        // 2. Link the secure Auth ID to your public 'tenants' table
+        if (authData.user) {
+            const { error: tenantError } = await db.from('tenants').insert([
+                {
+                    auth_id: authData.user.id, // Add this column to your tenants table!
+                    Name: residentName,
+                    Flat_Number: flatNumber,
+                    Role: 'tenant' // Default role
+                }
+            ]);
+
+            if (tenantError) throw tenantError;
+        }
+
+        showToast("Registration successful! Please log in.", "success");
+        // Redirect to login view here
+    } catch (e) {
+        console.error("Signup error:", e.message);
+        showToast(e.message, "error");
+    }
+};
+
+window.handleLogin = async function(identifier, password) {
+    showToast("Authenticating...", "info");
+    const loginBtn = document.getElementById('login-btn');
+    if (loginBtn) {
+        loginBtn.innerText = "Verifying...";
+        loginBtn.style.opacity = "0.7";
+    }
+
+    try {
+        // 1. Format the identifier (Supports BOTH Email and Mobile!)
+        const authParams = { ...formatAuthIdentifier(identifier), password: password };
+
+        // 2. Secure Vault Login
+        const { data: authData, error: authError } = await db.auth.signInWithPassword(authParams);
+        if (authError) throw authError;
+
+        // 3. Fetch Profile Data
+        const { data: tenantData, error: tenantError } = await db
+            .from('tenants')
+            .select('*')
+            .eq('auth_id', authData.user.id)
+            .limit(1);
+        if (tenantError) throw tenantError;
+
+        if (tenantData && tenantData.length > 0) {
+            window.tempUserData = {
+                id: authData.user.id,
+                email: authData.user.email || identifier, // Fallback if mobile was used
+                name: tenantData[0].Name,
+                flatId: tenantData[0].Flat_Number,
+                role: tenantData[0].Role
+            };
+
+            // 4. FORCE THE HEADERS TO SWAP IMMEDIATELY 
+            const loginHeader = document.getElementById('login-header');
+            if (loginHeader) loginHeader.style.setProperty('display', 'none', 'important');
+
+            const appHeader = document.getElementById('app-header');
+            if (appHeader) appHeader.style.setProperty('display', 'flex', 'important');
+
+            const topNav = document.getElementById('top-nav');
+            if (topNav) topNav.style.setProperty('display', 'flex', 'important');
+
+            // 5. Update Resident Name in Header
+            const headerNameEl = document.getElementById('display-user-name');
+            if (headerNameEl) headerNameEl.innerText = `${window.tempUserData.name}(${window.tempUserData.flatId})`;
+
+            // 6. Load the Views and Data
+            if (typeof routeToDashboard === 'function') {
+                routeToDashboard(window.tempUserData.role, window.tempUserData.flatId, window.tempUserData.name);
+            }
+            
+            loadAppDashboardData();
+            showToast("Login successful!", "success");
+        }
+    } catch (e) {
+        console.error("Login error:", e.message);
+        showToast("Invalid credentials.", "error");
+    } finally {
+        if (loginBtn) {
+            loginBtn.innerText = "Secure Login";
+            loginBtn.style.opacity = "1";
+        }
+    }
+};
+// --- HELPER FUNCTION: Convert Username to Supabase-Compatible Auth ID ---
+    function formatAuthIdentifier(username) {
+        // 1. Remove extra spaces, make it lowercase
+        // 2. Remove all special characters like ( ) - _
+        // Example: "Dhayalanathan(O)" becomes "dhayalanathano"
+        const cleanName = username.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        
+        // Return it as a dummy email so Supabase Auth accepts it instantly
+        return { email: `${cleanName}@sitara.app` };
+    }
+// --- SECURE SIGNUP ---
+// --- SECURE SIGNUP ---
+window.handleSignup = async function(identifier, password, residentName, flatNumber, mobile, email) {
+    showToast("Creating account...", "info");
+    const authParams = { ...formatAuthIdentifier(identifier), password: password };
+
+    try {
+        const { data: authData, error: authError } = await db.auth.signUp(authParams);
+        if (authError) throw authError;
+
+        if (authData.user) {
+            const { error: tenantError } = await db.from('tenants').insert([
+                {
+                    auth_id: authData.user.id,
+                    Name: residentName,
+                    Flat_Number: flatNumber,
+                    Role: 'resident', // Changed from 'tenant' to 'Resident' to match your table data!
+                    Mobile_Number: mobile,
+                    Mail_Id: email
+                }
+            ]);
+            if (tenantError) throw tenantError;
+        }
+
+        showToast("Registration successful! Please log in.", "success");
+        backToLogin(); // Automatically send them back to the login screen
+    } catch (e) {
+        console.error("Signup error:", e.message);
+        showToast(e.message, "error");
+    }
+};
+
+
+
+    // =========================================================================
+    // 3. AUXILIARY DATA FETCHERS (SUPABASE SYNC)
+    // =========================================================================
+   async function loadAppDashboardData() {
+        try {
+            // 1. Fetch Parking Data (Ordered by Slot_ID) and call global window.initParking
+            const { data: parkingData, error: parkingErr } = await db
+                .from('Parking')
+                .select('*')
+                .order('Slot_ID', { ascending: true });
+                
+            if (parkingErr) throw parkingErr;
+            if (parkingData && typeof window.initParking === 'function') {
+                window.initParking(parkingData);
+            }
+
+            // 2. Fetch Notices
+            const { data: noticesData } = await db.from('Notices').select('*');
+            if (noticesData && typeof populateNotices === 'function') populateNotices(noticesData);
+
+            // 3. Fetch Social
+const { data: socialData, error: socialError } = await db.from('Social').select('*').order('Timestamp', { ascending: false });
+
+console.log("Supabase Fetch Result ->", "Error:", socialError, "Data:", socialData);
+
+if (socialError) {
+    console.error("Error fetching social posts:", socialError.message);
+    const timeline = document.getElementById('social-timeline');
+    if (timeline) timeline.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--danger);">Failed to load posts. Check console.</div>';
+} else if (socialData) {
+    console.log("Sending data to window.populateSocial function...");
+    window.populateSocial(socialData); // <--- Updated to call the global function
+}
+
+            // 4. Fetch Payments & Filter out Paid Ones
+            
+            // A. Get the exact resident name used during payment submission
+            const headerNameEl = document.getElementById('display-user-name');
+            const residentName = headerNameEl ? headerNameEl.innerText.trim() : (window.tempUserData ? window.tempUserData.name : 'Unknown');
+
+            // B. Fetch all society bills
+            const { data: allBills } = await db.from('Payments').select('*');
+
+            // C. Fetch this specific resident's payment history
+            const { data: historyData } = await db
+                .from('PaymentHistory')
+                .select('*')
+                .eq('ResidentName', residentName)
+                .order('Timestamp', { ascending: false });
+
+            // D. Filter out the bills they have already paid
+            let unpaidBills = allBills || [];
+            if (historyData && historyData.length > 0 && allBills) {
+                const paidTitles = historyData.map(record => record.PaymentTitle);
+                unpaidBills = allBills.filter(bill => !paidTitles.includes(bill.Title));
+            }
+
+            // E. Render only the Unpaid Bills (Orange banners)
+            if (typeof populatePayments === 'function') populatePayments(unpaidBills);
+
+            // F. Render the Resident's Payment History box
+            if (window.renderPaymentHistory) window.renderPaymentHistory(historyData);
+            
+        } catch (e) {
+            console.warn("Could not load dashboard data from Supabase:", e);
+        }
+    }
+
+    // =========================================================================
+    // 4. SITARIAN CONNECT (SOCIAL)
+    // =========================================================================
+    function handleSocialImage(inputElement) {
+        const feedback = document.getElementById('social-feedback');
+        if (inputElement.files && inputElement.files.length > 0) {
+            feedback.innerText = "✅ Image attached successfully!";
+            feedback.style.color = "var(--success)";
+            if (inputElement.id === 'social-camera') {
+                document.getElementById('social-gallery').value = '';
+            } else {
+                document.getElementById('social-camera').value = '';
+            }
+        } else {
+            feedback.innerText = "⚠️ Failed to attach image. Please try again.";
+            feedback.style.color = "var(--warning)";
+        }
+    }
+
+    function postSocial() {
+        const title = document.getElementById('social-title').value;
+        const msg = document.getElementById('social-msg').value;
+        const btn = document.getElementById('post-social-btn');
+        const cam = document.getElementById('social-camera');
+        const gal = document.getElementById('social-gallery');
+
+        if(!title || !msg) return showToast("Please provide a Title and Message", "error");
+
+        btn.innerText = "Compressing & Posting..."; btn.disabled = true;
+        let selectedFile = cam.files.length > 0 ? cam.files[0] : (gal.files.length > 0 ? gal.files[0] : null);
+
+        if (selectedFile) {
+            if (selectedFile.size > 5 * 1024 * 1024) {
+                btn.innerText = "Share with Residents"; btn.disabled = false;
+                return showToast("Image is too large. Please select a smaller photo.", "warning");
+            }
+            compressImage(selectedFile, function(downscaledBase64) {
+                saveSocialToDB(title, msg, downscaledBase64, btn);
+            }, function(err) {
+                showToast("Image compression failed.", "error");
+                btn.innerText = "Share with Residents"; btn.disabled = false;
+            });
+        } else {
+            saveSocialToDB(title, msg, "", btn);
+        }
+    }
+
+    async function saveSocialToDB(title, msg, selectedFile, btn) {
+    try {
+        let publicImageUrl = "";
+
+        // 1. Upload to Storage (if a file was selected)
+        if (selectedFile) {
+            // Create a unique file name to prevent accidental overwrites
+            const uniqueFileName = `${Date.now()}_${selectedFile.name}`;
+            
+            const { data: uploadData, error: uploadError } = await db.storage
+                .from('community-posts')
+                .upload(uniqueFileName, selectedFile);
+
+            if (uploadError) throw uploadError;
+
+            // Grab the short public URL generated by Supabase
+            const { data: urlData } = db.storage
+                .from('community-posts')
+                .getPublicUrl(uniqueFileName);
+            
+            publicImageUrl = urlData.publicUrl;
+        }
+
+        // 2. Save the URL to the Database Table
+        const { error: dbError } = await db.from('Social').insert([{ 
+            Name: window.tempUserData.name, 
+            FlatID: window.tempUserData.flatId, 
+            Title: title, 
+            Message: msg, 
+            // We can still use your existing column, it will just hold a short link now!
+            ImageBase64: publicImageUrl 
+        }]);
+
+        if (dbError) throw dbError;
+
+        showToast("Posted to community!", "success");
+        document.getElementById('socialModal').style.display = 'none';
+        loadAppDashboardData(); 
+        
+        // ... include your form reset lines here ...
+        
+    } catch (e) {
+        console.error("Upload Error:", e);
+        showToast("Connection error while posting.", "error");
+    } finally {
+        btn.innerText = "Share with Residents"; 
+        btn.disabled = false;
+    }
+}
+
+    function postSocial() {
+    const title = document.getElementById('social-title').value;
+    const msg = document.getElementById('social-msg').value;
+    const btn = document.getElementById('post-social-btn');
+    const cam = document.getElementById('social-camera');
+    const gal = document.getElementById('social-gallery');
+
+    if(!title || !msg) return showToast("Please provide a Title and Message", "error");
+
+    btn.innerText = "Uploading & Posting..."; 
+    btn.disabled = true;
+    
+    let selectedFile = cam.files.length > 0 ? cam.files[0] : (gal.files.length > 0 ? gal.files[0] : null);
+
+    if (selectedFile) {
+        // ENFORCING YOUR NEW 3MB LIMIT (3 * 1024 * 1024 bytes)
+        if (selectedFile.size > 3 * 1024 * 1024) {
+            btn.innerText = "Share with Residents"; 
+            btn.disabled = false;
+            return showToast("Image is too large. Max size is 3MB.", "warning");
+        }
+        
+        // Passing the raw file directly to your new Storage bucket function!
+        saveSocialToDB(title, msg, selectedFile, btn);
+        
+    } else {
+        // No image attached, just send the text
+        saveSocialToDB(title, msg, null, btn);
+    }
+}
+
+// ==========================================
+// POPULATE SOCIAL POSTS ON THE TIMELINE
+// ==========================================
+window.populateSocial = function(arr) {
+    console.log("populateSocial function is running! Data received:", arr);
+    
+    const timeline = document.getElementById('social-timeline');
+    
+    // Check if the HTML container exists
+    if (!timeline) {
+        console.error("CRITICAL ERROR: Could not find an HTML element with id='social-timeline'.");
+        return; 
+    }
+
+    // Clear the loading text
+    timeline.innerHTML = ''; 
+
+    // Handle empty database
+    if (!arr || arr.length === 0) {
+        timeline.innerHTML = '<div style="padding: 20px; text-align: center; color: #64748b;">No community posts yet.</div>';
+        return;
+    }
+
+    // Draw each post
+    arr.forEach(post => {
+        const div = document.createElement('div');
+        div.style.cssText = "background: white; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: left;";
+        
+        div.innerHTML = `
+            <div style="font-weight: bold; color: var(--primary); font-size: 1rem;">${post.Title || 'Update'}</div>
+            <div style="color: #64748b; font-size: 0.75rem; margin-bottom: 6px;">By ${post.Name} (${post.FlatID})</div>
+            <p style="font-size:0.9rem; color: var(--text-dark); line-height: 1.4; margin: 0;">${post.Message}</p>
+        `;
+        
+        // Only attempt to show an image if a valid URL exists
+        if (post.ImageBase64 && post.ImageBase64.startsWith('http')) {
+            div.innerHTML += `<img src="${post.ImageBase64}" style="width:100%; max-height:200px; object-fit: contain; border-radius:6px; margin-top:8px; background: #f1f5f9;">`;
+        }
+        
+        timeline.appendChild(div);
+    });
+};
+
+window.resetNoticeBtn = function(btn) {
+        if (!btn) return;
+        btn.innerText = "Publish Notice";
+        btn.style.opacity = "1";
+        btn.disabled = false;
+    };
+
+window.postNotice = function() {
+        const title = document.getElementById('notice-title').value;
+        const desc = document.getElementById('notice-desc').value;
+        const btn = document.getElementById('post-notice-btn');
+
+        if(!title || !desc) return showToast("Please provide Title and Description", "error");
+
+        const camInput = document.getElementById('camera-input');
+        const galInput = document.getElementById('gallery-input');
+        let selectedFile = camInput && camInput.files.length > 0 ? camInput.files[0] : (galInput && galInput.files.length > 0 ? galInput.files[0] : null);
+
+        if(btn) {
+            btn.innerText = "Uploading & Saving...";
+            btn.style.opacity = "0.7";
+            btn.disabled = true;
+        }
+
+        if (selectedFile) {
+            if (selectedFile.size > 5 * 1024 * 1024) {
+                showToast("Image is too large. Please select an image under 5MB.", "warning");
+                resetNoticeBtn(btn);
+                return;
+            }
+            compressImage(selectedFile, function(base64Image) {
+                saveNoticeToDB(title, desc, base64Image, btn);
+            }, function(err) {
+                showToast("Image compression failed.", "error");
+                resetNoticeBtn(btn);
+            });
+        } else {
+            saveNoticeToDB(title, desc, "", btn);
+        }
+    };
+
+    window.saveNoticeToDB = async function(title, desc, base64Image, btn) {
+        try {
+            const { error } = await db.from('Notices').insert([
+                { 
+                    Timestamp: new Date().toLocaleString(), // <-- This populates the timestamp!
+                    Title: title, 
+                    Description: desc, 
+                    "Image Link": base64Image 
+                }
+            ]);
+
+            if (error) throw error;
+
+            showToast("Notice Saved & Posted!", "success");
+            document.getElementById('notice-title').value = '';
+            document.getElementById('notice-desc').value = '';
+            loadAppDashboardData();
+            window.resetNoticeBtn(btn);
+        } catch (e) {
+            console.error("Notice error:", e.message);
+            showToast("Connection error while saving notice.", "error");
+            window.resetNoticeBtn(btn);
+        }
+    };
+
+    window.addPaymentToTimeline = function(title, desc, amt, qrUrl, bankLink) {
+        const timeline = document.getElementById('payment-timeline');
+        if (!timeline) return;
+        
+        const banner = document.createElement('div');
+        banner.className = 'payment-banner';
+        banner.style.cursor = 'pointer'; 
+        banner.style.position = 'relative';
+        banner.style.zIndex = '10';
+
+        banner.onclick = function() { 
+            if (window.openPayment) {
+                window.openPayment(title, desc, qrUrl, bankLink, amt); 
+            }
+        };
+        
+        banner.innerHTML = `
+            <div style="pointer-events: none;">
+                <div style="font-weight: bold; font-size: 1rem; margin-bottom: 2px;">${title}</div>
+                <div style="font-size: 0.75rem; color: #fff; opacity: 0.8;">Tap for action...</div>
+            </div>
+            <div style="font-weight: bold; font-size: 1.1rem; pointer-events: none;">₹ ${amt}</div>
+        `;
+        timeline.insertBefore(banner, timeline.firstChild);
+    };
+
+    window.populatePayments = function(arr) {
+        const timeline = document.getElementById('payment-timeline');
+        if (!timeline) return;
+        timeline.innerHTML = ''; 
+        
+        if(!arr || arr.length === 0) {
+            timeline.innerHTML = '<div style="padding: 20px; text-align: center; color: #64748b;">No pending payments required.</div>';
+            return;
+        }
+        
+        arr.forEach(p => {
+            window.addPaymentToTimeline(p.Title, p.Description, p.Amount, p.QRCodeURL, p.BankLink);
+        });
+    };
+window.openPayment = function(title, desc, qrUrl, bankLink, amount) {
+    const titleEl = document.getElementById('payModalTitle');
+    if (titleEl) titleEl.innerText = title;
+
+    const descEl = document.getElementById('payModalDesc');
+    if (descEl) descEl.innerText = desc;
+    
+    // Store the amount on the modal element for later retrieval
+    const modal = document.getElementById('paymentModal');
+    if (modal) {
+        modal.dataset.paymentAmount = amount || '0';
+    }
+
+    // --- SMART UPI/QR LOGIC ---
+    const qrContainer = document.getElementById('qr-container'); // 🟢 THIS HIDES THE GRAY BOX
+    const imgElement = document.getElementById('payModalImg');
+    const upiBtn = document.getElementById('payModalUpiLink'); 
+
+    // Reset everything to hidden first so they don't overlap
+    if (qrContainer) qrContainer.style.display = 'none';
+    if (upiBtn) upiBtn.style.display = 'none';
+
+    if (qrUrl && qrUrl !== 'EMPTY') {
+        if (qrUrl.startsWith('upi://')) {
+            // It is a dynamic deep link - attach it to the button and show it!
+            if (upiBtn) {
+                upiBtn.href = qrUrl;
+                upiBtn.style.display = 'block';
+            }
+        } else {
+            // It is a standard image link - show the gray QR box instead
+            if (qrContainer && imgElement) {
+                imgElement.src = qrUrl;
+                qrContainer.style.display = 'block';
+            }
+        }
+    }
+    // ------------------------------
+
+    const linkElement = document.getElementById('payModalLink');
+    if (linkElement) {
+        linkElement.href = bankLink && bankLink !== 'EMPTY' ? bankLink : '#';
+        linkElement.style.display = (bankLink && bankLink !== 'EMPTY') ? 'block' : 'none';
+    }
+
+    // --- BULLETPROOF ADMIN CHECK ---
+    const delBtn = document.getElementById('delete-payment-btn');
+    if (delBtn) {
+        const userRole = (window.tempUserData && window.tempUserData.role) ? window.tempUserData.role.trim().toLowerCase() : '';
+
+        if (userRole.includes('admin')) { 
+            delBtn.style.setProperty('display', 'block', 'important'); 
+            delBtn.dataset.paymentTitle = title;
+        } else {
+            delBtn.style.setProperty('display', 'none', 'important'); 
+        }
+    }
+    // -------------------------------
+    
+    if (modal) modal.style.display = 'flex';
+};
+
+window.addPaymentToTimeline = function(title, desc, amt, qrUrl, bankLink) {
+        const timeline = document.getElementById('payment-timeline');
+        if (!timeline) return;
+        
+        const banner = document.createElement('div');
+        banner.className = 'payment-banner';
+        banner.style.cursor = 'pointer'; 
+        banner.style.position = 'relative';
+        banner.style.zIndex = '10';
+
+        banner.onclick = function() { 
+            if (window.openPayment) {
+            window.openPayment(title, desc, qrUrl, bankLink, amt); 
+            }
+        };
+        
+        banner.innerHTML = `
+            <div style="pointer-events: none;">
+                <div style="font-weight: bold; font-size: 1rem; margin-bottom: 2px;">${title}</div>
+                <div style="font-size: 0.75rem; color: #fff; opacity: 0.8;">Tap for action...</div>
+            </div>
+            <div style="font-weight: bold; font-size: 1.1rem; pointer-events: none;">₹ ${amt}</div>
+        `;
+        timeline.insertBefore(banner, timeline.firstChild);
+    };
+
+// 1. Make the close modal function global
+    window.closePaymentModal = function() {
+        const modal = document.getElementById('paymentModal');
+        if (modal) modal.style.display = 'none';
+    };
+
+    
+
+// 1. Save "I Have Paid This" to the Database
+   window.confirmPaymentAction = async function() {
+        const titleEl = document.getElementById('payModalTitle');
+        const paymentTitle = titleEl ? titleEl.innerText : 'Unknown Payment';
+        
+        const modal = document.getElementById('paymentModal');
+    // 🟢 Wrap the string in parseInt() to ensure Supabase reads it as a number
+    const paymentAmount = modal ? parseInt(modal.dataset.paymentAmount) || 0 : 0;
+
+        // Get the full header display text exactly as it is (e.g., "Dhayalanathan(O)")
+        const headerNameEl = document.getElementById('display-user-name');
+        const fullUserText = headerNameEl ? headerNameEl.innerText.trim() : 'Resident';
+
+        let flatNo = 'N/A';
+
+        showToast("Processing payment confirmation...", "info");
+
+        try {
+            // Query the 'tenants' table using the FULL string (e.g., "Dhayalanathan(O)")
+            const { data, error: tenantError } = await db
+                .from('tenants')
+                .select('*')
+                .ilike('Name', fullUserText) // Searching for the exact complete name
+                .limit(1);
+
+            if (!tenantError && data && data.length > 0) {
+                // Pulls the actual Flat_Number value from your table
+                flatNo = data[0].Flat_Number || 'N/A';
+            } else {
+                console.warn("No match found in tenants table for name:", fullUserText);
+            }
+
+            // Insert into PaymentHistory
+            const { error: insertError } = await db.from('PaymentHistory').insert([
+                {
+                    Timestamp: new Date().toLocaleString(),
+                    PaymentTitle: paymentTitle,
+                    ResidentName: fullUserText, // Saves "Dhayalanathan(O)"
+                    FlatNo: flatNo,
+                    Amount: paymentAmount,
+                    Status: 'Paid / Pending Verification'
+                }
+            ]);
+
+            if (insertError) throw insertError;
+
+            showToast("Payment confirmation sent to management!", "success");
+            window.closePaymentModal();
+        } catch (e) {
+            console.error("Payment confirmation error:", e.message);
+            showToast("Failed to save payment record.", "error");
+        }
+    };
+
+    // 2. Delete Payment Request (Admin Only)
+    window.deletePaymentRequest = async function(btn) {
+        const title = btn.dataset.paymentTitle;
+        if (!title) return;
+
+        if (!confirm(`Are you sure you want to delete payment intimation: "${title}"?`)) return;
+
+        try {
+            const { error } = await db.from('Payments').delete().eq('Title', title);
+            if (error) throw error;
+
+            showToast("Payment request deleted successfully.", "success");
+            window.closePaymentModal();
+            loadAppDashboardData(); 
+        } catch (e) {
+            console.error("Delete error:", e.message);
+            showToast("Failed to delete payment request.", "error");
+        }
+    };
+
+    window.openPayment = function(title, desc, qrUrl, bankLink, amount) {
+    // 🔍 DIAGNOSTIC TOOL: Prints exactly what data the modal is receiving
+    console.log("--- OPENING PAYMENT MODAL ---");
+    console.log("1. Title:", title);
+    console.log("2. QR/UPI URL:", qrUrl);
+    console.log("3. Bank Link:", bankLink);
+
+    const titleEl = document.getElementById('payModalTitle');
+    if (titleEl) titleEl.innerText = title;
+
+    const descEl = document.getElementById('payModalDesc');
+    if (descEl) descEl.innerText = desc;
+    
+    const modal = document.getElementById('paymentModal');
+    if (modal) modal.dataset.paymentAmount = amount || '0';
+
+    // --- SMART UPI/QR LOGIC ---
+    const qrContainer = document.getElementById('qr-container'); 
+    const imgElement = document.getElementById('payModalImg');
+    const upiBtn = document.getElementById('payModalUpiLink'); 
+
+    // Reset everything to hidden first
+    if (qrContainer) qrContainer.style.display = 'none';
+    if (upiBtn) upiBtn.style.display = 'none';
+
+    // Check if we received a valid URL, trimming any accidental spaces
+    if (qrUrl && qrUrl !== 'EMPTY' && qrUrl !== 'undefined') {
+        const cleanUrl = String(qrUrl).trim();
+        
+        if (cleanUrl.startsWith('upi://')) {
+            // It is a dynamic deep link - attach it to the button and show it!
+            if (upiBtn) {
+                upiBtn.href = cleanUrl;
+                upiBtn.style.display = 'block';
+            }
+        } else {
+            // It is a standard image link - show the gray QR box instead
+            if (qrContainer && imgElement) {
+                imgElement.src = cleanUrl;
+                qrContainer.style.display = 'block';
+            }
+        }
+    }
+
+    const linkElement = document.getElementById('payModalLink');
+    if (linkElement) {
+        linkElement.href = bankLink && bankLink !== 'EMPTY' ? bankLink : '#';
+        linkElement.style.display = (bankLink && bankLink !== 'EMPTY') ? 'block' : 'none';
+    }
+
+    // --- ADMIN DELETE CHECK ---
+    const delBtn = document.getElementById('delete-payment-btn');
+    if (delBtn) {
+        const userRole = (window.tempUserData && window.tempUserData.role) ? window.tempUserData.role.trim().toLowerCase() : '';
+        if (userRole.includes('admin')) { 
+            delBtn.style.setProperty('display', 'block', 'important'); 
+            delBtn.dataset.paymentTitle = title;
+        } else {
+            delBtn.style.setProperty('display', 'none', 'important'); 
+        }
+    }
+    
+    if (modal) modal.style.display = 'flex';
+};
+
+    window.closePaymentModal = function() {
+        const modal = document.getElementById('paymentModal');
+        if (modal) modal.style.display = 'none';
+    };
+
+// Define openNotice globally right at the start of your script
+    window.openNotice = function(title, description, imageLink) {
+    // 1. Set the modal text (assuming you have elements with these IDs in your HTML)
+    document.getElementById('modalTitle').innerText = title;
+    document.getElementById('modalDesc').innerText = description;
+
+    // 2. Clear any old delete button from previous clicks
+    const oldBtn = document.getElementById('delete-notice-btn');
+    if(oldBtn) oldBtn.remove();
+
+    // 3. Build the delete button ONLY if they are an admin
+    // Note: I added "window." here and ".toLowerCase()" just to be extra safe!
+    if (window.tempUserData && window.tempUserData.role.toLowerCase() === 'admin') {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.id = 'delete-notice-btn';
+        deleteBtn.innerText = "Delete Notice";
+        deleteBtn.style.background = "var(--danger)";
+        deleteBtn.style.marginTop = "15px";
+        deleteBtn.onclick = function() { deleteNotice(title); };
+        
+        const modalDescEl = document.getElementById('modalDesc');
+        if(modalDescEl && modalDescEl.parentNode) {
+            modalDescEl.parentNode.appendChild(deleteBtn);
+        }
+    }
+    
+    // 4. Open the modal
+    const modal = document.getElementById('noticeModal');
+    if (modal) modal.style.display = 'flex';
+};
+
+    function populateNotices(noticesArray) {
+        const timeline = document.getElementById('admin-timeline');
+        if(!timeline) return;
+        timeline.innerHTML = ''; 
+
+        if (!noticesArray || noticesArray.length === 0) {
+            timeline.innerHTML = '<div style="flex: 1; display: flex; align-items: center; justify-content: center; color: #475569; font-size: 0.9rem; text-align: center;">No new announcements from management today.</div>';
+            return;
+        }
+
+        noticesArray.forEach(notice => {
+            const banner = document.createElement('div');
+            banner.className = 'admin-banner';
+            // Map database columns (Title, Description, Image Link) to the UI
+            banner.innerHTML = `<div style="font-weight: bold; font-size: 1rem; margin-bottom: 2px;">${notice.Title}</div><div style="font-size: 0.75rem; color: #e0e7ff;">Click to view details...</div>`;
+            
+            // Explicitly call the global window function
+            banner.onclick = () => window.openNotice(notice.Title, notice.Description, notice["Image Link"]);
+            
+            timeline.appendChild(banner);
+        });
+    }
+window.closeNoticeModal = function() { 
+        const modal = document.getElementById('noticeModal');
+        if (modal) modal.style.display = 'none'; 
+    };
+
+    function populatePayments(arr) {
+        const timeline = document.getElementById('payment-timeline');
+        if (!timeline) return;
+        timeline.innerHTML = ''; 
+        
+        if(!arr || arr.length === 0) {
+            timeline.innerHTML = '<div style="padding: 20px; text-align: center; color: #64748b;">No pending payments required.</div>';
+            return;
+        }
+        // Map database columns (Title, Description, Amount, QRCodeURL, BankLink) to the UI
+        arr.forEach(p => addPaymentToTimeline(p.Title, p.Description, p.Amount, p.QRCodeURL, p.BankLink));
+    }
+async function deleteNotice(title) {
+        if(!confirm("Permanently delete this notice?")) return;
+        showToast("Deleting...", "info");
+        closeNoticeModal();
+
+        try {
+            // Updated to match your database column 'Title' with a capital T
+            const { error } = await db.from('Notices').delete().eq('Title', title);
+            if (error) throw error;
+            showToast("Notice deleted.", "success");
+            loadAppDashboardData();
+        } catch(e) {
+            console.error("Delete notice error:", e.message);
+            showToast("Failed to delete notice.", "error");
+        }
+    }
+
+    
+
+    // =========================================================================
+    // 7. PARKING LOGIC
+    // =========================================================================
+    let liveParkingData = [];
+    let parkingTimerInterval = null;
+
+    window.initParking = function(parkingArray) {
+        liveParkingData = parkingArray;
+        renderParkingGrid();
+    };
+
+    window.openParkingModule = function() {
+        switchNav('parking-view');
+    };
+
+    function renderParkingGrid() {
+        const grid = document.getElementById('live-parking-grid');
+        if(!grid) return;
+        grid.innerHTML = ''; 
+        
+        let availableCount = 0;
+
+        liveParkingData.forEach(slot => {
+            const div = document.createElement('div');
+            
+            // Treat NULL, empty string, or 'Available' as an open slot
+            const isAvailable = !slot.Status || slot.Status === "Available";
+            
+            if (isAvailable) {
+                availableCount++;
+                div.className = "parking-slot slot-available";
+                div.innerHTML = `
+                    <h3 style="margin-bottom: 5px;">${slot.Slot_ID}</h3>
+                    <span style="font-size: 0.85rem; font-weight:bold;">Available</span>
+                `;
+                div.onclick = () => window.reserveSlotPrompt(slot.Slot_ID);
+            } else {
+                div.className = "parking-slot slot-occupied";
+                
+                // Allow Admin or the current user to vacate
+                const userRole = (window.tempUserData && window.tempUserData.role) ? window.tempUserData.role.trim().toLowerCase() : '';
+                const canVacate = true; // Set to true so residents can check themselves out. You can restrict this later!
+                
+                const vacateHtml = canVacate ? `<button class="vacate-btn" onclick="window.vacateSlot('${slot.Slot_ID}')">Checkout</button>` : '';
+
+                div.innerHTML = `
+                    <h3 style="margin-bottom: 2px;">${slot.Slot_ID}</h3>
+                    <div style="font-size: 0.75rem; font-weight:bold; color: #450a0a;">Flat: ${slot.Flat_ID || 'N/A'}</div>
+                    <div style="font-size: 0.7rem; margin-bottom: 5px;">(${slot.Guest_Name || 'Guest'})</div>
+                    <div class="slot-timer" data-checkin="${slot.Check_In_Time}">00:00</div>
+                    ${vacateHtml}
+                `;
+            }
+            grid.appendChild(div);
+        });
+
+        const dashCount = document.getElementById('dashboard-open-slots');
+        if(dashCount) {
+            dashCount.innerText = availableCount;
+            dashCount.style.color = availableCount > 0 ? '#047857' : '#ef4444';
+        }
+        startParkingTimers();
+    }
+
+    function startParkingTimers() {
+        if (parkingTimerInterval) clearInterval(parkingTimerInterval);
+        parkingTimerInterval = setInterval(() => {
+            const timers = document.querySelectorAll('.slot-timer');
+            const now = new Date();
+            
+            timers.forEach(timer => {
+                const checkInDate = new Date(timer.getAttribute('data-checkin'));
+                if (isNaN(checkInDate)) return; // Skip if date is invalid/null
+
+                const diffMs = now - checkInDate;
+                const diffHrs = Math.floor(diffMs / 3600000);
+                const diffMins = Math.floor((diffMs % 3600000) / 60000);
+                
+                if (diffHrs > 0) {
+                    timer.innerText = `${diffHrs}h ${diffMins}m`;
+                } else {
+                    timer.innerText = `${diffMins}m`;
+                }
+            });
+        }, 1000);
+    }
+
+    window.reserveSlotPrompt = async function(slotId) {
+        const guest = prompt(`Reserving ${slotId}. Enter Guest Name/Vehicle Number:`);
+        if (!guest) return;
+
+        showToast("Reserving slot...", "info");
+
+        // Dynamically fetch the Flat Number just like we did for the Payment module!
+        const headerNameEl = document.getElementById('display-user-name');
+        const fullUserText = headerNameEl ? headerNameEl.innerText.trim() : 'Resident';
+        let userFlatId = 'Unknown';
+
+        try {
+            const { data } = await db.from('tenants').select('Flat_Number').ilike('Name', fullUserText).limit(1);
+            if (data && data.length > 0) userFlatId = data[0].Flat_Number || 'N/A';
+        } catch(e) {
+            console.warn("Could not fetch flat number:", e);
+        }
+
+        try {
+            // Update Supabase using EXACT column names
+            const { error } = await db.from('Parking').update({
+                Status: 'Occupied',
+                Flat_ID: userFlatId,
+                Guest_Name: guest,
+                Check_In_Time: new Date().toISOString()
+            }).eq('Slot_ID', slotId);
+
+            if (error) throw error;
+
+            showToast(`${slotId} reserved successfully!`, "success");
+            loadAppDashboardData(); // Refreshes the grid automatically
+        } catch (e) {
+            console.error("Reservation error:", e.message);
+            showToast("Failed to reserve slot.", "error");
+        }
+    };
+
+    window.vacateSlot = async function(slotId) {
+        if (!confirm(`Are you sure you want to checkout and free up ${slotId}?`)) return;
+        showToast("Vacating slot...", "info");
+
+        try {
+            // Clear the slot in Supabase using EXACT column names
+            const { error } = await db.from('Parking').update({
+                Status: 'Available',
+                Flat_ID: null,
+                Guest_Name: null,
+                Check_In_Time: null
+            }).eq('Slot_ID', slotId);
+
+            if (error) throw error;
+
+            showToast(`${slotId} is now available.`, "success");
+            loadAppDashboardData(); // Refreshes the grid automatically
+        } catch (e) {
+            console.error("Vacate error:", e.message);
+            showToast("Failed to vacate slot.", "error");
+        }
+    };
+
+    // =========================================================================
+// 8. NAVIGATION & LOGOUT
+// =========================================================================
+window.switchNav = function(targetViewId) {
+    try {
+        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+        const targetView = document.getElementById(targetViewId);
+        if (targetView) {
+            targetView.classList.add('active');
+        } else {
+            alert("SYSTEM ERROR: Could not find HTML ID -> " + targetViewId);
+            return;
+        }
+
+        const allNavs = document.querySelectorAll('.nav-item');
+        allNavs.forEach(nav => nav.classList.remove('active'));
+        
+        if (targetViewId === 'resident-dashboard-view' && allNavs[0]) allNavs[0].classList.add('active');
+        if (targetViewId === 'resident-requests-view' && allNavs[1]) allNavs[1].classList.add('active');
+        if (targetViewId === 'resident-payments-view' && allNavs[2]) allNavs[2].classList.add('active');
+        
+        if (targetViewId === 'admin-hub-view' && allNavs[3]) {
+            allNavs[3].classList.add('active');
+            
+            // 🟢 ADDED TRIGGER: Fetch verifications when the tab opens
+            if (window.loadAdminPendingPayments) {
+                window.loadAdminPendingPayments();
+            }
+        }
+
+    } catch (error) {
+        alert("JAVASCRIPT CRASH: " + error.message);
+    }
+};
+
+    window.logout = async function() {
+        showToast("Logging out...", "info");
+
+        try {
+            // 1. Destroy the secure Supabase session
+            const { error } = await db.auth.signOut();
+            if (error) throw error;
+
+            // 2. Clear out the temporary user data
+            window.tempUserData = null;
+            if (typeof parkingTimerInterval !== 'undefined' && parkingTimerInterval) {
+                clearInterval(parkingTimerInterval);
+            }
+
+            // 3. Reset the UI back to the login state
+            const appHeader = document.getElementById('app-header');
+            const topNav = document.getElementById('top-nav');
+            if (appHeader) appHeader.style.display = 'none';
+            if (topNav) topNav.style.display = 'none';
+            
+            document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+            
+            const loginHeader = document.getElementById('login-header');
+            if (loginHeader) loginHeader.style.display = 'block';
+            
+            document.getElementById('login-view').classList.add('active');
+            
+            // 4. Clear all input fields so the next person doesn't see old data
+            document.querySelectorAll('input').forEach(input => input.value = '');
+            
+            showToast("Successfully logged out.", "success");
+        } catch (err) {
+            console.error("Logout error:", err.message);
+            showToast("Failed to log out securely.", "error");
+        }
+    };
+
+    window.routeToDashboard = function(role, id, name) {
+    // 1. SAFELY HIDE LOGIN HEADER (Forced to override stubborn CSS)
+    const loginHeader = document.getElementById('login-header');
+    if (loginHeader) {
+        loginHeader.style.setProperty('display', 'none', 'important');
+    }
+
+    // 2. SAFELY SHOW APP HEADER (Logo & Logout)
+    const appHeader = document.getElementById('app-header');
+    if (appHeader) appHeader.style.display = 'flex';
+
+    // 3. SAFELY SHOW TOP NAV (This is what was likely crashing!)
+    const topNav = document.getElementById('top-nav');
+    if (topNav) topNav.style.display = 'flex';
+    
+    // 4. Update the Resident's Name
+    const nameDisplay = document.getElementById('display-user-name');
+    if (nameDisplay) nameDisplay.innerText = name || ('Flat ' + id);
+
+    // 5. Hide all main views to prepare for switching
+    document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+
+    const cleanRole = role ? role.trim().toLowerCase() : '';
+
+    // 6. Safely show/hide the Admin Nav button
+    const adminNav = document.getElementById('admin-nav');
+    if (adminNav) {
+        adminNav.style.display = (cleanRole === 'admin') ? 'block' : 'none';
+    }
+
+    // 7. Route to the correct dashboard view
+    if (cleanRole === 'admin') {
+        const adminView = document.getElementById('admin-hub-view');
+        if (adminView) {
+            adminView.classList.add('active');
+        } else {
+            // Fallback just in case admin view is missing
+            const resView = document.getElementById('resident-dashboard-view');
+            if (resView) resView.classList.add('active');
+        }
+    } else {
+        const resView = document.getElementById('resident-dashboard-view');
+        if (resView) resView.classList.add('active');
+    }
+};
+
+    function showToast(message, type = 'error') {
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'toast-container';
+            document.querySelector('.app-container').appendChild(container);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerText = message;
+        container.appendChild(toast);
+
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300); 
+        }, 3500);
+    }
+
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('noticeModal')) closeNoticeModal();
+        if (event.target == document.getElementById('paymentModal')) closePaymentModal();
+        if (event.target == document.getElementById('socialModal')) closeSocialModal();
+    };
+
+async function processMonthlyCSV() {
+    const fileInput = document.getElementById('csv-upload');
+    if (fileInput.files.length === 0) {
+        alert("Please select a CSV file first.");
+        return;
+    }
+
+    // 1. SECURE FETCH: Pull the master bank details directly from the DB
+    const { data: masterSettings, error: settingsError } = await db
+        .from('SocietySettings')
+        .select('upi_id, society_name, bank_url')
+        .single(); // .single() grabs the exact row since there's only one
+
+    if (settingsError) {
+        console.error("Security Error:", settingsError);
+        alert("Could not fetch secure banking details from the server.");
+        return;
+    }
+
+    // Assign the secure variables from the database
+    const societyUpiId = masterSettings.upi_id;
+    const societyName = masterSettings.society_name;
+    const netBankingUrl = masterSettings.bank_url;
+
+    // 2. Process the CSV File
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = async function(event) {
+        const csvText = event.target.result;
+        const rows = csvText.split('\n').map(row => row.trim()).filter(row => row !== '');
+        const dataRows = rows.slice(1); // Skip header row
+        
+        const billsToInsert = [];
+
+        // Loop through each row and safely extract data
+        dataRows.forEach(row => {
+            const columns = row.split(',');
+            
+            // SAFETY CHECK: Skip ghost rows or rows missing a Flat Number
+            if (columns.length < 8 || !columns[1] || columns[1].trim() === '') {
+                return; 
+            }
+            
+            const flatNo = columns[1].trim(); 
+            const maint = columns[3] ? columns[3].trim() : '0';  
+            const water = columns[4] ? columns[4].trim() : '0';
+            const gensetReading = columns[5] ? columns[5].trim() : '0'; 
+            const gensetCharges = columns[6] ? columns[6].trim() : '0'; 
+            
+            // Safely parse the total, fallback to 0 if it's missing or not a number
+            const total = columns[7] ? parseInt(columns[7].trim()) || 0 : 0; 
+            
+            // Generate the dynamic links using the securely fetched DB data
+            const transactionNote = `${flatNo}_April2026`; 
+            const uniqueUpiLink = `upi://pay?pa=${societyUpiId}&pn=${societyName}&am=${total}&tn=${transactionNote}&cu=INR`;
+            
+            billsToInsert.push({
+                Timestamp: new Date().toLocaleString(), // 🟢 NEW: Grabs the exact date and time of the upload
+                Title: "Charges Payable in April 2026", 
+                Description: `Maintenance: ₹${maint} | Water: ₹${water} | Genset Reading: ${gensetReading} units | Genset Charges: ₹${gensetCharges}`,
+                Amount: total,
+                FlatNo: flatNo,
+                QRCodeURL: uniqueUpiLink, 
+                BankLink: netBankingUrl     
+            });
+        });
+
+        if (billsToInsert.length === 0) {
+            alert("No valid billing data found in the CSV. Please check the file format.");
+            return;
+        }
+
+        // Insert into the Payments table
+        const { error: uploadError } = await db.from('Payments').insert(billsToInsert);
+
+        if (uploadError) {
+            console.error("Upload Error:", uploadError);
+            alert("Failed to upload bills. Check the console for details.");
+        } else {
+            alert(`Successfully distributed ${billsToInsert.length} monthly bills!`);
+            fileInput.value = ""; 
+        }
+    };
+
+    reader.readAsText(file);
+}
+
+window.postPayment = async function() {
+    // 1. Map to your form's input IDs (Ensure these match your HTML exactly)
+    const titleEl = document.getElementById('fee-title');
+    const descEl = document.getElementById('fee-desc');
+    const amountEl = document.getElementById('fee-amount');
+    const qrEl = document.getElementById('fee-qr');
+    const bankEl = document.getElementById('fee-bank');
+
+    if (!titleEl || !amountEl || !titleEl.value || !amountEl.value) {
+        alert("Fee Title and Amount are required.");
+        return;
+    }
+
+    let qrUrl = qrEl ? qrEl.value.trim() : '';
+    let bankLink = bankEl ? bankEl.value.trim() : '';
+
+    // 2. SECURE AUTO-FILL: If links are left blank, fetch the master settings from DB
+    if (!qrUrl || !bankLink) {
+        const { data: settings, error: settingsError } = await db.from('SocietySettings').select('*').single();
+        
+        if (!settingsError && settings) {
+            if (!qrUrl) {
+                // Generates a dynamic UPI link (e.g., "Global_Corpus_fund_adva")
+                const note = `Global_${titleEl.value.replace(/\s+/g, '_').substring(0, 15)}`;
+                qrUrl = `upi://pay?pa=${settings.upi_id}&pn=${settings.society_name}&am=${amountEl.value}&tn=${note}&cu=INR`;
+            }
+            if (!bankLink) {
+                bankLink = settings.bank_url;
+            }
+        }
+    }
+
+    // 3. Build the payload for the database
+    const newPayment = {
+        Title: titleEl.value,
+        Description: descEl ? descEl.value : '',
+        Amount: parseInt(amountEl.value),
+        FlatNo: 'All', // Ensures it shows up on everyone's dashboard
+        QRCodeURL: qrUrl || 'EMPTY',
+        BankLink: bankLink || 'EMPTY'
+    };
+
+    // 4. Push to Supabase
+    const { error } = await db.from('Payments').insert([newPayment]);
+
+    if (error) {
+        console.error("Error issuing payment:", error);
+        alert("Failed to issue payment intimation.");
+    } else {
+        alert("Payment notice issued successfully!");
+        
+        // 5. Clear the form
+        titleEl.value = '';
+        if (descEl) descEl.value = '';
+        amountEl.value = '';
+        if (qrEl) qrEl.value = '';
+        if (bankEl) bankEl.value = '';
+        
+        // 6. Refresh the UI to remove the "No pending payments required" state
+        if (window.loadAppDashboardData) {
+            window.loadAppDashboardData();
+        }
+    }
+};
+// 1. Fetch and Display Pending Payments
+window.loadAdminPendingPayments = async function() {
+    const adminSection = document.getElementById('admin-verification-section');
+    const pendingList = document.getElementById('pending-payments-list');
+    
+    // Check if user is an admin
+    const userRole = (window.tempUserData && window.tempUserData.role) ? window.tempUserData.role.trim().toLowerCase() : '';
+    if (!userRole.includes('admin')) {
+        if (adminSection) adminSection.style.display = 'none';
+        return;
+    }
+
+    // Reveal the section for admins
+    if (adminSection) adminSection.style.display = 'block';
+
+    // Fetch pending payments securely from Supabase
+    const { data, error } = await db
+        .from('PaymentHistory')
+        .select('*')
+        .eq('Status', 'Paid / Pending Verification')
+        .order('Timestamp', { ascending: false });
+
+    if (error) {
+        console.error("Error fetching pending payments:", error);
+        pendingList.innerHTML = '<p style="color: var(--danger);">Failed to load data.</p>';
+        return;
+    }
+
+    if (!data || data.length === 0) {
+        pendingList.innerHTML = '<p style="color: #64748b; font-size: 0.9rem;">All clear! No pending payments require verification.</p>';
+        return;
+    }
+
+    // Build the clean UI cards for the admin
+    let html = '';
+    data.forEach(item => {
+        html += `
+            <div style="background: #f9fafb; border: 1px solid #e5e7eb; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <div style="font-weight: bold; font-size: 1.1rem; color: #1e293b;">Flat ${item.FlatNo} - ${item.ResidentName}</div>
+                    <div style="font-size: 0.9rem; color: #64748b;">${item.PaymentTitle} | <strong style="color: var(--primary);">₹${item.Amount}</strong></div>
+                    <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px;">Logged: ${item.Timestamp}</div>
+                </div>
+                <!-- 🟢 UPDATED: Passes the Timestamp instead of an ID -->
+                <button onclick="verifyAdminPayment('${item.Timestamp}')" style="background: var(--success); color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s;">
+                    Verify & Clear
+                </button>
+            </div>
+        `;
+    });
+    pendingList.innerHTML = html;
+};
+
+// 2. The Verification Action Button
+// 🟢 UPDATED: Accepts the Timestamp parameter
+window.verifyAdminPayment = async function(recordTimestamp) {
+    if (!confirm("Has this ₹ amount successfully hit the society bank account? Click OK to officially clear this record.")) return;
+    
+    showToast("Verifying payment...", "info");
+
+    // 🟢 Automatically replaces the "T" with a space so it exactly matches the database string
+    const cleanTimestamp = String(recordTimestamp).replace('T', ' ');
+
+    const { error } = await db
+        .from('PaymentHistory')
+        .update({ Status: 'Verified / Cleared' })
+        .eq('Timestamp', cleanTimestamp);
+
+    if (error) {
+        console.error("Verification Error:", error);
+        showToast("Failed to verify payment.", "error");
+    } else {
+        showToast("Payment officially cleared!", "success");
+        loadAdminPendingPayments(); // Instantly refresh the UI list
+    }
+};
+window.renderPaymentHistory = function(historyArray) {
+    // 🟢 UPDATED: Now perfectly matches your HTML ID
+    const container = document.getElementById('payment-history-timeline'); 
+    
+    if (!container) return;
+
+    if (!historyArray || historyArray.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#64748b; padding: 20px;">No recent payment history.</p>';
+        return;
+    }
+
+    let html = '';
+    historyArray.forEach(record => {
+        let statusColor = record.Status.includes('Verified') ? '#10b981' : '#f59e0b';
+        
+        html += `
+            <div style="border-bottom: 1px solid #e5e7eb; padding: 12px 0;">
+                <div style="font-weight: bold; color: #1e293b; font-size: 0.95rem;">${record.PaymentTitle}</div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-top: 6px;">
+                    <span style="color: #64748b;">${record.Timestamp.split(' ')[0]}</span>
+                    <span style="color: ${statusColor}; font-weight: bold;">₹${record.Amount} - ${record.Status}</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+};
+
+// Controls the Gate Form UI
+window.openGateForm = function(type) {
+    const formCard = document.getElementById('gate-entry-form-card');
+    const formTitle = document.getElementById('gate-form-title');
+    const nameLabel = document.getElementById('gate-name-label');
+    const typeHidden = document.getElementById('gate-entry-type');
+    
+    // Reset previous inputs
+    document.getElementById('gate-flat-no').value = '';
+    document.getElementById('gate-person-name').value = '';
+    document.getElementById('gate-purpose').value = '';
+
+    // Dynamically adjust the text based on the strict cycle rules
+    if (type === 'Guest') {
+        formTitle.innerText = '👤 New Guest Entry';
+        formTitle.style.color = '#3b82f6';
+        nameLabel.innerText = 'Guest Name';
+        typeHidden.value = 'Guest';
+    } else {
+        formTitle.innerText = '🛠️ New Service / Vendor Entry (Requires Gatepass)';
+        formTitle.style.color = '#f59e0b';
+        nameLabel.innerText = 'Worker / Rep Name';
+        typeHidden.value = 'Service/Vendor';
+    }
+    
+    // Reveal the form
+    formCard.style.display = 'block';
+    
+    // Smooth scroll to the form for tablet users
+    formCard.scrollIntoView({ behavior: 'smooth' });
+};
+
+// 1. Submit a New Visitor to the GateLogs Table
+window.submitGateEntry = async function() {
+    const flatNo = document.getElementById('gate-flat-no').value.trim().toUpperCase();
+    const personName = document.getElementById('gate-person-name').value.trim();
+    const purpose = document.getElementById('gate-purpose').value.trim();
+    const category = document.getElementById('gate-entry-type').value; // 'Guest' or 'Service/Vendor'
+
+    if (!flatNo || !personName) {
+        showToast("Flat Number and Name are required!", "error");
+        return;
+    }
+
+    // Set the initial status. 
+    // Since the guard is initiating it, it requires Resident Approval.
+    const initialStatus = 'Pending Approval';
+    const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+
+    showToast("Triggering Alert to Resident...", "info");
+
+    const { error } = await db.from('GateLogs').insert([{
+        FlatNo: flatNo,
+        PersonName: personName,
+        Category: category,
+        Purpose: purpose || 'Not Specified',
+        Status: initialStatus,
+        Timestamp: timestamp
+    }]);
+
+    if (error) {
+        console.error("Gate Entry Error:", error);
+        showToast("Failed to send entry request.", "error");
+    } else {
+        showToast("Entry request sent to " + flatNo + "!", "success");
+        
+        // Hide the form and clear the inputs
+        document.getElementById('gate-entry-form-card').style.display = 'none';
+        document.getElementById('gate-flat-no').value = '';
+        document.getElementById('gate-person-name').value = '';
+        document.getElementById('gate-purpose').value = '';
+        
+        // Refresh the live screen
+        window.loadActiveGateLogs();
+    }
+};
+
+// 2. Fetch the Live "Active Premises" Log
+window.loadActiveGateLogs = async function() {
+    const logList = document.getElementById('active-gate-log-list');
+    if (!logList) return;
+
+    // Fetch anyone who is NOT 'Exited'
+    const { data, error } = await db
+        .from('GateLogs')
+        .select('*')
+        .neq('Status', 'Exited')
+        .order('Timestamp', { ascending: false });
+
+    if (error || !data || data.length === 0) {
+        logList.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">No active visitors inside.</p>';
+        return;
+    }
+
+    let html = '';
+    data.forEach(log => {
+        // Color coding for quick visual checks by the guard
+        let badgeColor = log.Status === 'Pending Approval' ? '#f59e0b' : 
+                         log.Status === 'Inside Premises' ? '#3b82f6' : 
+                         log.Status === 'Gatepass Signed' ? '#10b981' : '#64748b';
+
+        
+
+        // 🟢 ADDED: A Check-Out button for the guards
+        let actionButton = `<button onclick="window.checkoutVisitor(${log.id})" style="background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 8px;">Mark Exited</button>`;
+
+        html += `
+            <div style="background: #f8fafc; border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: bold; font-size: 1.1rem;">${log.PersonName} <span style="font-size: 0.8rem; background: #e2e8f0; padding: 2px 6px; border-radius: 4px; margin-left: 5px;">Flat ${log.FlatNo}</span></div>
+                    <div style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">${log.Category} - ${log.Purpose}</div>
+                    ${actionButton}
+                </div>
+                <div style="text-align: right;">
+                    <div style="color: ${badgeColor}; font-weight: bold; font-size: 0.9rem;">${log.Status}</div>
+                    <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px;">${log.Timestamp.split(' ')[1]}</div>
+                </div>
+            </div>
+        `;
+    });
+
+    logList.innerHTML = html;
+};
+window.processSecurityLogin = async function() {
+    const gateSelect = document.getElementById('security-gate-select').value;
+    const passcode = document.getElementById('security-passcode').value.trim();
+
+    if (!passcode) {
+        showToast("Please enter a passcode.", "warning");
+        return;
+    }
+
+    showToast("Verifying credentials...", "info");
+
+    // 🟢 SECURE LOGIN: Check the passcode against the active guards in Supabase
+    const { data, error } = await db
+        .from('SecurityStaff')
+        .select('*')
+        .eq('Passcode', passcode)
+        .eq('IsActive', true);
+
+    if (error || !data || data.length === 0) {
+        showToast("Invalid or Inactive Passcode", "error");
+        return;
+    }
+
+    // 🟢 AUTHENTICATION SUCCESS!
+    const guard = data[0]; // Grab the first matching guard record
+    showToast("Welcome, " + guard.GuardName, "success");
+    
+    // Store the actual guard's name so we can attach it to gate logs later!
+    window.tempUserData = { 
+        role: 'security', 
+        name: guard.GuardName, 
+        gate: gateSelect 
+    };
+
+    // Hide the bottom navigation bar (Guards don't need it)
+    const navBar = document.querySelector('.bottom-nav');
+    if (navBar) navBar.style.display = 'none';
+
+    // Switch to the Gate View
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('security-gate-view').classList.add('active');
+    
+    // UI ROUTING BASED ON REAL-WORLD LOGIC (In-Gate vs Out-Gate)
+    const entryControls = document.getElementById('new-entry-controls');
+    const vehicleControls = document.getElementById('out-gate-vehicle-controls');
+    const formCard = document.getElementById('gate-entry-form-card');
+    
+    if (formCard) formCard.style.display = 'none'; 
+
+    if (gateSelect === 'Out-Gate') {
+        if (entryControls) entryControls.style.display = 'none';
+        if (vehicleControls) vehicleControls.style.display = 'block';
+    } else {
+        if (entryControls) entryControls.style.display = 'block';
+        if (vehicleControls) vehicleControls.style.display = 'none';
+    }
+
+    window.loadActiveGateLogs();
+};
+document.addEventListener('DOMContentLoaded', () => {
+    const secBtn = document.getElementById('btn-security-login');
+    if (secBtn) {
+        secBtn.addEventListener('click', () => {
+            // Hide all views
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            // Show the security login view
+            const secView = document.getElementById('security-login-view');
+            if (secView) secView.classList.add('active');
+        });
+    }
+});
+
+// 🟢 RESIDENT FUNCTION: Pre-Approve an expected visitor
+window.preApproveVisitor = async function() {
+    const name = document.getElementById('tenant-visitor-name').value.trim();
+    const category = document.getElementById('tenant-visitor-category').value;
+    const purpose = document.getElementById('tenant-visitor-purpose').value.trim();
+    
+    // Fallback logic to grab the resident's flat number. 
+    // (Adjust this variable if you store the logged-in user's flat differently!)
+    const flatNo = (window.tempUserData && window.tempUserData.flatNo) ? window.tempUserData.flatNo : 'A005'; 
+
+    if (!name) {
+        showToast("Please enter the visitor or company name.", "warning");
+        return;
+    }
+
+    showToast("Authorizing...", "info");
+    const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+
+    const { error } = await db.from('GateLogs').insert([{
+        FlatNo: flatNo,
+        PersonName: name,
+        Category: category,
+        Purpose: purpose || 'Not Specified',
+        Status: 'Pre-Approved', // This specific status tells the guard they are cleared!
+        Timestamp: timestamp
+    }]);
+
+    if (error) {
+        console.error(error);
+        showToast("Failed to pre-approve visitor.", "error");
+    } else {
+        showToast(name + " has been cleared for entry!", "success");
+        
+        // Clear the form
+        document.getElementById('tenant-visitor-name').value = '';
+        document.getElementById('tenant-visitor-purpose').value = '';
+    }
+};
+</script>
+
+</body>
+</html>
