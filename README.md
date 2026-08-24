@@ -71,10 +71,19 @@ Sitara-Residence-application/
 ├── index.html        # Entire front-end app: markup, styling, and Supabase client logic
 ├── Sitara1.png        # Apartment logo shown in the in-app header
 ├── screenshots/        # Screens referenced in this README
+├── demo/               # Demo walkthrough video referenced in this README
 └── README.md
 ```
 
 Everything — routing between screens, form handling, Supabase queries, toast notifications, and the parking timer — lives inside `index.html`, split into a `<style>` block, the view markup, and a single `<script>` block of plain JS functions attached to `window`.
+
+---
+
+# Demo Video
+
+<video src="demo/sitara_demo.mp4" controls width="320"></video>
+
+A 35-second walkthrough of Sign In, Activate Account, the Resident Dashboard, Maintenance Requests, Payments, Visitor Parking, the Admin Hub, and the Gate Security console. Recorded against a sandboxed copy of the app with sample data and every network call stubbed out — no real resident data or credentials involved.
 
 ---
 
